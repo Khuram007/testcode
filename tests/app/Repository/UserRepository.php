@@ -17,12 +17,13 @@ use DTApi\Models\UserLanguages;
 use Monolog\Handler\StreamHandler;
 use Illuminate\Support\Facades\DB;
 use Monolog\Handler\FirePHPHandler;
+use Tests\TestCase;
 
 /**
  * Class BookingRepository
  * @package DTApi\Repository
  */
-class UserRepository extends BaseRepository
+class UserRepository extends TestCase
 {
 
     protected $model;
@@ -41,9 +42,9 @@ class UserRepository extends BaseRepository
         $this->logger->pushHandler(new FirePHPHandler());
     }
 
-    public function createOrUpdate($id = null, $request)
-    { 
-        $model = is_null($id) ? new User : User::findOrFail($id);
+    public function testCreateOrUpdate($request)
+    {
+        $model = is_null($id) ? new User : User::findOrFail(1);
         $model->user_type = $request['role'];
         $model->name = $request['name'];
         $model->company_id = $request['company_id'] != '' ? $request['company_id'] : 0;
@@ -231,5 +232,5 @@ class UserRepository extends BaseRepository
     {
         return User::where('user_type', 2)->get();
     }
-    
+
 }

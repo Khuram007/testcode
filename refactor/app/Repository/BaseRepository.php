@@ -2,6 +2,7 @@
 
 namespace DTApi\Repository;
 
+use App\Traits\ApiResponse;
 use Validator;
 use Illuminate\Database\Eloquent\Model;
 use DTApi\Exceptions\ValidationException;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class BaseRepository
 {
-
+use ApiResponse;
     /**
      * @var Model
      */

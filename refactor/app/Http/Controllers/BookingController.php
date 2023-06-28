@@ -7,9 +7,11 @@ use DTApi\Http\Requests;
 use DTApi\Models\Distance;
 use Illuminate\Http\Request;
 use DTApi\Repository\BookingRepository;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Class BookingController
+ *
  * @package DTApi\Http\Controllers
  */
 class BookingController extends Controller
@@ -22,7 +24,8 @@ class BookingController extends Controller
 
     /**
      * BookingController constructor.
-     * @param BookingRepository $bookingRepository
+     *
+     * @param  BookingRepository  $bookingRepository
      */
     public function __construct(BookingRepository $bookingRepository)
     {
@@ -30,264 +33,303 @@ class BookingController extends Controller
     }
 
     /**
-     * @param Request $request
-     * @return mixed
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
      */
-    public function index(Request $request)
+    public function index(Request $request): \Illuminate\Http\JsonResponse
     {
-        if($user_id = $request->get('user_id')) {
-
-            $response = $this->repository->getUsersJobs($user_id);
-
-        }
-        elseif($request->__authenticatedUser->user_type == env('ADMIN_ROLE_ID') || $request->__authenticatedUser->user_type == env('SUPERADMIN_ROLE_ID'))
-        {
-            $response = $this->repository->getAll($request);
-        }
-
-        return response($response);
-    }
-
-    /**
-     * @param $id
-     * @return mixed
-     */
-    public function show($id)
-    {
-        $job = $this->repository->with('translatorJobRel.user')->find($id);
-
-        return response($job);
-    }
-
-    /**
-     * @param Request $request
-     * @return mixed
-     */
-    public function store(Request $request)
-    {
-        $data = $request->all();
-
-        $response = $this->repository->store($request->__authenticatedUser, $data);
-
-        return response($response);
-
-    }
-
-    /**
-     * @param $id
-     * @param Request $request
-     * @return mixed
-     */
-    public function update($id, Request $request)
-    {
-        $data = $request->all();
-        $cuser = $request->__authenticatedUser;
-        $response = $this->repository->updateJob($id, array_except($data, ['_token', 'submit']), $cuser);
-
-        return response($response);
-    }
-
-    /**
-     * @param Request $request
-     * @return mixed
-     */
-    public function immediateJobEmail(Request $request)
-    {
-        $adminSenderEmail = config('app.adminemail');
-        $data = $request->all();
-
-        $response = $this->repository->storeJobEmail($data);
-
-        return response($response);
-    }
-
-    /**
-     * @param Request $request
-     * @return mixed
-     */
-    public function getHistory(Request $request)
-    {
-        if($user_id = $request->get('user_id')) {
-
-            $response = $this->repository->getUsersJobsHistory($user_id, $request);
-            return response($response);
-        }
-
-        return null;
-    }
-
-    /**
-     * @param Request $request
-     * @return mixed
-     */
-    public function acceptJob(Request $request)
-    {
-        $data = $request->all();
-        $user = $request->__authenticatedUser;
-
-        $response = $this->repository->acceptJob($data, $user);
-
-        return response($response);
-    }
-
-    public function acceptJobWithId(Request $request)
-    {
-        $data = $request->get('job_id');
-        $user = $request->__authenticatedUser;
-
-        $response = $this->repository->acceptJobWithId($data, $user);
-
-        return response($response);
-    }
-
-    /**
-     * @param Request $request
-     * @return mixed
-     */
-    public function cancelJob(Request $request)
-    {
-        $data = $request->all();
-        $user = $request->__authenticatedUser;
-
-        $response = $this->repository->cancelJobAjax($data, $user);
-
-        return response($response);
-    }
-
-    /**
-     * @param Request $request
-     * @return mixed
-     */
-    public function endJob(Request $request)
-    {
-        $data = $request->all();
-
-        $response = $this->repository->endJob($data);
-
-        return response($response);
-
-    }
-
-    public function customerNotCall(Request $request)
-    {
-        $data = $request->all();
-
-        $response = $this->repository->customerNotCall($data);
-
-        return response($response);
-
-    }
-
-    /**
-     * @param Request $request
-     * @return mixed
-     */
-    public function getPotentialJobs(Request $request)
-    {
-        $data = $request->all();
-        $user = $request->__authenticatedUser;
-
-        $response = $this->repository->getPotentialJobs($user);
-
-        return response($response);
-    }
-
-    public function distanceFeed(Request $request)
-    {
-        $data = $request->all();
-
-        if (isset($data['distance']) && $data['distance'] != "") {
-            $distance = $data['distance'];
-        } else {
-            $distance = "";
-        }
-        if (isset($data['time']) && $data['time'] != "") {
-            $time = $data['time'];
-        } else {
-            $time = "";
-        }
-        if (isset($data['jobid']) && $data['jobid'] != "") {
-            $jobid = $data['jobid'];
-        }
-
-        if (isset($data['session_time']) && $data['session_time'] != "") {
-            $session = $data['session_time'];
-        } else {
-            $session = "";
-        }
-
-        if ($data['flagged'] == 'true') {
-            if($data['admincomment'] == '') return "Please, add comment";
-            $flagged = 'yes';
-        } else {
-            $flagged = 'no';
-        }
-        
-        if ($data['manually_handled'] == 'true') {
-            $manually_handled = 'yes';
-        } else {
-            $manually_handled = 'no';
-        }
-
-        if ($data['by_admin'] == 'true') {
-            $by_admin = 'yes';
-        } else {
-            $by_admin = 'no';
-        }
-
-        if (isset($data['admincomment']) && $data['admincomment'] != "") {
-            $admincomment = $data['admincomment'];
-        } else {
-            $admincomment = "";
-        }
-        if ($time || $distance) {
-
-            $affectedRows = Distance::where('job_id', '=', $jobid)->update(array('distance' => $distance, 'time' => $time));
-        }
-
-        if ($admincomment || $session || $flagged || $manually_handled || $by_admin) {
-
-            $affectedRows1 = Job::where('id', '=', $jobid)->update(array('admin_comments' => $admincomment, 'flagged' => $flagged, 'session_time' => $session, 'manually_handled' => $manually_handled, 'by_admin' => $by_admin));
-
-        }
-
-        return response('Record updated!');
-    }
-
-    public function reopen(Request $request)
-    {
-        $data = $request->all();
-        $response = $this->repository->reopen($data);
-
-        return response($response);
-    }
-
-    public function resendNotifications(Request $request)
-    {
-        $data = $request->all();
-        $job = $this->repository->find($data['jobid']);
-        $job_data = $this->repository->jobToData($job);
-        $this->repository->sendNotificationTranslator($job, $job_data, '*');
-
-        return response(['success' => 'Push sent']);
-    }
-
-    /**
-     * Sends SMS to Translator
-     * @param Request $request
-     * @return \Illuminate\Contracts\Routing\ResponseFactory|\Symfony\Component\HttpFoundation\Response
-     */
-    public function resendSMSNotifications(Request $request)
-    {
-        $data = $request->all();
-        $job = $this->repository->find($data['jobid']);
-        $job_data = $this->repository->jobToData($job);
-
         try {
-            $this->repository->sendSMSNotificationToTranslator($job);
-            return response(['success' => 'SMS sent']);
+            $response = [];
+            if ($user_id = $request->get('user_id')) {
+                $response = $this->repository->getUsersJobs($user_id);
+
+            } elseif ($request->__authenticatedUser->user_type == env('ADMIN_ROLE_ID') || $request->__authenticatedUser->user_type == env('SUPERADMIN_ROLE_ID')) {
+                $response = $this->repository->getAll($request);
+            }
+
+            return $this->setResponse(['data' => $response]);
         } catch (\Exception $e) {
-            return response(['success' => $e->getMessage()]);
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param $id
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function show($id): \Illuminate\Http\JsonResponse
+    {
+        try {
+            return $this->setResponse([
+                'job' => $this->repository->with('translatorJobRel.user')->find($id),
+            ]);
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function store(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            return $this->setResponse([
+                'data' => $this->repository->store($request->__authenticatedUser, $request->all()),
+            ]);
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+    }
+
+    /**
+     * @param $id
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function update($id, Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            return $this->setResponse([
+                'data' => $this->repository->updateJob($id, array_except($request->all(), ['_token', 'submit']),
+                    $request->__authenticatedUser),
+            ]);
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function immediateJobEmail(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            return $this->setResponse([
+                'data' => $this->repository->storeJobEmail($request->all()),
+            ]);
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function getHistory(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $response = [];
+            if ($user_id = $request->get('user_id')) {
+                $response = $this->repository->getUsersJobsHistory($user_id, $request);
+            }
+
+            return $this->setResponse(['data' => $response]);
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function acceptJob(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            return $this->setResponse([
+                'data' => $this->repository->acceptJob($request->all(), $request->__authenticatedUser),
+            ]);
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function acceptJobWithId(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            return $this->setResponse([
+                'data' => $this->repository->acceptJobWithId($request->get('job_id'), $request->__authenticatedUser),
+            ]);
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function cancelJob(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            return $this->setResponse([
+                'data' => $this->repository->cancelJobAjax($request->all(), $request->__authenticatedUser),
+            ]);
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function endJob(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            return $this->setResponse([
+                'data' => $this->repository->endJob($request->all()),
+            ]);
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function customerNotCall(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            return $this->setResponse([
+                'data' => $this->repository->customerNotCall($request->all()),
+            ]);
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function getPotentialJobs(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            return $this->setResponse([
+                'data' => $this->repository->getPotentialJobs($request->__authenticatedUser),
+            ]);
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function distanceFeed(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            if ($request->time || $request->distance) {
+                Distance::where('job_id', '=', $request->jobid)->update([
+                    'distance' => $request->distance,
+                    'time'     => $request->time,
+                ]);
+            }
+
+            Job::where('id', '=', $request->jobid)->update([
+                'admin_comments'   => $request->get('admincomment', ''),
+                'flagged'          => $request->flagged === 'true' ? 'yes' : 'no',
+                'session_time'     => $request->get('session_time', ''),
+                'manually_handled' => $request->manually_handled === 'true' ? 'yes' : 'no',
+                'by_admin'         => $request->by_admin === 'true' ? 'yes' : 'no',
+            ]);
+
+            return $this->setResponse([], 'Record has been updated.');
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function reopen(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            return $this->setResponse([
+                'data' => $this->repository->reopen($request->all()),
+            ]);
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function resendNotifications(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $job     = $this->repository->find($request->jobid);
+            $jobData = $this->repository->jobToData($job);
+            $this->repository->sendNotificationTranslator($job, $jobData, '*');
+
+            return $this->setResponse([], 'Push sent');
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    /**
+     * @param  \Illuminate\Http\Request  $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @author Khuram Qadeer.
+     */
+    public function resendSMSNotifications(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $job = $this->repository->find($request->jobid);
+            $this->repository->jobToData($job);
+            $this->repository->sendSMSNotificationToTranslator($job);
+
+            return $this->setResponse([], 'SMS sent');
+        } catch (\Exception $e) {
+            return $this->setResponse([], $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
         }
     }
 

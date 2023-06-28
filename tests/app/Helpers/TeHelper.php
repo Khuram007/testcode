@@ -8,8 +8,9 @@ use DTApi\Models\Language;
 use DTApi\Models\UserMeta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Tests\TestCase;
 
-class TeHelper
+class TeHelper extends TestCase
 {
     public static function fetchLanguageFromJobId($id)
     {
@@ -40,25 +41,27 @@ class TeHelper
         return $jobs;
     }
 
-    public static function willExpireAt($due_time, $created_at)
+    public static function testWillExpireAt($dueTime, $createdAt)
     {
-        $due_time = Carbon::parse($due_time);
-        $created_at = Carbon::parse($created_at);
+        $dueTime = Carbon::parse($dueTime);
+        $createdAt = Carbon::parse($createdAt);
 
-        $difference = $due_time->diffInHours($created_at);
-
+        $difference = $dueTime->diffInHours($createdAt);
 
         if($difference <= 90)
-            $time = $due_time;
+            $time = $dueTime;
         elseif ($difference <= 24) {
-            $time = $created_at->addMinutes(90);
+            $time = $createdAt->addMinutes(90);
         } elseif ($difference > 24 && $difference <= 72) {
-            $time = $created_at->addHours(16);
+            $time = $createdAt->addHours(16);
         } else {
-            $time = $due_time->subHours(48);
+            $time = $dueTime->subHours(48);
         }
 
-        return $time->format('Y-m-d H:i:s');
+        $this->assertEquals($time->format('Y-m-d H:i:s'), [
+            'dueTime'=>$dueTime,
+            'createdAt'=>$createdAt
+        ]);
 
     }
 
